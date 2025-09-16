@@ -1,63 +1,225 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แอปจัดการเงินกู้ (รวมไฟล์)</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+// ✅ โค้ดส่วน script ที่แก้ไขแล้วทั้งหมด
 
-    <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1, h2 { color: #005A9C; }
-        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif;}
-        button:hover { background-color: #0056b3; }
-        button#add-new-btn { display: block; width: 100%; margin-bottom: 20px; font-size: 18px; padding: 12px; }
-        button.danger { background-color: #dc3545; }
-        button.danger:hover { background-color: #c82333; }
-        .customer-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; cursor: pointer; }
-        .customer-item:hover { background-color: #f0f0f0; }
-        /* ... โค้ด CSS อื่นๆ ทั้งหมดจากไฟล์ style.css ... */
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>แอปจัดการเงินกู้</h1>
-        <button id="add-new-btn">+ เพิ่มลูกค้าใหม่</button>
-        <div id="customer-list-container">
-            <h2>รายชื่อลูกค้า (Active)</h2>
-            <div id="customer-list"><div class="loader"></div></div>
-        </div>
-    </div>
+const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
 
-    <dialog id="customer-dialog">
-        </dialog>
+// --- FIX: เปลี่ยนชื่อตัวแปรตรงนี้ ---
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <div id="spinner" class="spinner" style="display:none;"></div>
+// --- DOM Elements ---
+const customerList = document.getElementById('customer-list');
+const dialog = document.getElementById('customer-dialog');
+const modalTitle = document.getElementById('modal-title');
+const form = document.getElementById('customer-form');
+const detailsView = document.getElementById('details-view');
+const spinner = document.getElementById('spinner');
+const addNewBtn = document.getElementById('add-new-btn');
+const closeBtn = document.querySelector('.close-btn');
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// --- Event Listeners ---
+document.addEventListener('DOMContentLoaded', loadCustomers);
+addNewBtn.addEventListener('click', () => openFormModal());
+closeBtn.addEventListener('click', () => dialog.close());
+form.addEventListener('submit', handleFormSubmit);
+
+// --- Core Functions ---
+async function loadCustomers() {
+    customerList.innerHTML = '<div class="loader"></div>';
     
-    <script>
-        const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
+    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+    const { data, error } = await supabaseClient
+        .from('loans')
+        .select('*')
+        .eq('status', 'Active')
+        .order('created_at', { ascending: false });
 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    if (error) {
+        console.error('Error fetching customers:', error);
+        customerList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>`;
+        return;
+    }
 
-        // --- DOM Elements ---
-        const customerList = document.getElementById('customer-list');
-        const dialog = document.getElementById('customer-dialog');
+    displayCustomers(data);
+}
+
+function displayCustomers(customers) {
+    customerList.innerHTML = '';
+    if (customers.length === 0) {
+        customerList.innerHTML = '<p>ยังไม่มีข้อมูลลูกค้า</p>';
+        return;
+    }
+    customers.forEach(cust => {
+        const item = document.createElement('div');
+        item.className = 'customer-item';
+        item.dataset.customerId = cust.id;
+        item.onclick = () => viewCustomerDetails(cust.id);
+
+        item.innerHTML = `
+            <div class="customer-info">${cust.borrower_name} - ${cust.loan_amount.toLocaleString()} บาท</div>
+            <div class="customer-status status-${cust.status}">${cust.status}</div>
+        `;
+        customerList.appendChild(item);
+    });
+}
+
+async function handleFormSubmit(event) {
+    event.preventDefault();
+    spinner.style.display = 'block';
+
+    const formData = new FormData(form);
+    const customerId = formData.get('customerId');
+    
+    let imageUrl1 = document.getElementById('preview1').src;
+    let imageUrl2 = document.getElementById('preview2').src;
+
+    const file1 = formData.get('imageFile1');
+    if (file1 && file1.size > 0) {
+        imageUrl1 = await uploadImage(file1);
+    }
+    
+    const file2 = formData.get('imageFile2');
+    if (file2 && file2.size > 0) {
+        imageUrl2 = await uploadImage(file2);
+    }
+
+    const loanData = {
+        borrower_name: formData.get('borrowerName'),
+        loan_amount: parseFloat(formData.get('loanAmount')),
+        interest_rate: parseFloat(formData.get('interestRate')),
+        loan_days: parseInt(formData.get('loanDays')),
+        image_url_1: imageUrl1,
+        image_url_2: imageUrl2,
+    };
+
+    let result;
+    if (customerId) {
+        // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+        result = await supabaseClient.from('loans').update(loanData).eq('id', customerId);
+    } else {
+        // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+        result = await supabaseClient.from('loans').insert([loanData]);
+    }
+    
+    spinner.style.display = 'none';
+
+    if (result.error) {
+        alert('เกิดข้อผิดพลาด: ' + result.error.message);
+    } else {
+        alert(customerId ? 'อัปเดตข้อมูลสำเร็จ!' : 'เพิ่มลูกค้าใหม่สำเร็จ!');
+        dialog.close();
+        loadCustomers();
+    }
+}
+
+async function uploadImage(file) {
+    const fileName = `${Date.now()}_${file.name}`;
+    
+    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+    const { data, error } = await supabaseClient.storage
+        .from('images')
+        .upload(fileName, file);
+
+    if (error) {
+        console.error('Image Upload Error:', error);
+        return null;
+    }
+    
+    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+    const { data: { publicUrl } } = supabaseClient.storage
+        .from('images')
+        .getPublicUrl(fileName);
         
-        // --- Event Listeners ---
-        document.addEventListener('DOMContentLoaded', loadCustomers);
+    return publicUrl;
+}
 
-        // --- Core Functions ---
-        async function loadCustomers() {
-            // ... โค้ด JavaScript อื่นๆ ทั้งหมดจากไฟล์ script.js ...
+// --- Modal Control ---
+function openFormModal(customerData = null) {
+    form.reset();
+    document.getElementById('preview1').style.display = 'none';
+    document.getElementById('preview2').style.display = 'none';
+    form.style.display = 'block';
+    detailsView.style.display = 'none';
+
+    if (customerData) {
+        modalTitle.innerText = 'แก้ไขข้อมูลลูกค้า';
+        document.getElementById('customerId').value = customerData.id;
+        document.getElementById('borrowerName').value = customerData.borrower_name;
+        document.getElementById('loanAmount').value = customerData.loan_amount;
+        document.getElementById('interestRate').value = customerData.interest_rate;
+        document.getElementById('loanDays').value = customerData.loan_days;
+
+        if (customerData.image_url_1) {
+            const preview1 = document.getElementById('preview1');
+            preview1.src = customerData.image_url_1;
+            preview1.style.display = 'block';
         }
+        if (customerData.image_url_2) {
+            const preview2 = document.getElementById('preview2');
+            preview2.src = customerData.image_url_2;
+            preview2.style.display = 'block';
+        }
+    } else {
+        modalTitle.innerText = 'เพิ่มลูกค้าใหม่';
+    }
 
-        // ... ฟังก์ชันอื่นๆ ทั้งหมด ...
-    </script>
-</body>
-</html>
+    dialog.showModal();
+}
+
+async function viewCustomerDetails(customerId) {
+    spinner.style.display = 'block';
+    
+    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+    const { data: customer, error } = await supabaseClient
+        .from('loans')
+        .select('*')
+        .eq('id', customerId)
+        .single();
+
+    spinner.style.display = 'none';
+    
+    if (error) {
+        alert('ไม่สามารถดึงข้อมูลลูกค้าได้: ' + error.message);
+        return;
+    }
+
+    form.style.display = 'none';
+    detailsView.style.display = 'block';
+    modalTitle.innerText = 'รายละเอียดลูกค้า';
+
+    document.getElementById('detail-name').innerText = customer.borrower_name;
+    document.getElementById('detail-amount').innerText = customer.loan_amount.toLocaleString();
+    document.getElementById('detail-interest-rate').innerText = customer.interest_rate;
+    document.getElementById('detail-status').innerText = customer.status;
+    document.getElementById('detail-img1').src = customer.image_url_1 || 'https://via.placeholder.com/150?text=No+Image';
+    document.getElementById('detail-img2').src = customer.image_url_2 || 'https://via.placeholder.com/150?text=No+Image';
+    
+    const editBtn = document.getElementById('edit-btn');
+    const closeLoanBtn = document.getElementById('close-loan-btn');
+    
+    editBtn.onclick = () => openFormModal(customer);
+    closeLoanBtn.onclick = () => closeLoan(customer.id, customer.borrower_name);
+
+    dialog.showModal();
+}
+
+async function closeLoan(customerId, customerName) {
+    if (!confirm(`คุณต้องการปิดยอดของ ${customerName} ใช่หรือไม่?`)) return;
+
+    spinner.style.display = 'block';
+    
+    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
+    const { error } = await supabaseClient
+        .from('loans')
+        .update({ status: 'Closed' })
+        .eq('id', customerId);
+
+    spinner.style.display = 'none';
+    
+    if (error) {
+        alert('เกิดข้อผิดพลาดในการปิดยอด: ' + error.message);
+    } else {
+        alert('ปิดยอดเรียบร้อยแล้ว');
+        dialog.close();
+        loadCustomers();
+    }
+}
