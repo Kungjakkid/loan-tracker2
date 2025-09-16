@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แอปจัดการเงินกู้</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,16 +14,22 @@
         h1, h2 { color: #005A9C; }
         button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif;}
         button:hover { background-color: #0056b3; }
-        button#add-new-btn { display: block; width: 100%; margin-bottom: 20px; font-size: 18px; padding: 12px; }
+        button#add-new-btn { display: block; width: 100%; margin-bottom: 10px; font-size: 18px; padding: 12px; }
         button.danger { background-color: #dc3545; }
         button.danger:hover { background-color: #c82333; }
+        button.secondary { background-color: #6c757d; width: 100%; margin-bottom: 20px; }
+        button.secondary:hover { background-color: #5a6268; }
         #customer-list { margin-top: 15px; }
-        .customer-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; cursor: pointer; }
+        .customer-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; cursor: pointer; border-left: 5px solid transparent; }
         .customer-item:hover { background-color: #f0f0f0; }
+        .customer-item.status-overdue { border-left-color: #dc3545; }
+        .customer-item.status-due-soon { border-left-color: #ffc107; }
         .customer-info { font-size: 18px; }
         .customer-status { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; }
         .status-Active { background-color: #28a745; }
         .status-Closed { background-color: #6c757d; }
+        .closed-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .closed-item:last-child { border-bottom: none; }
         dialog { border: none; border-radius: 8px; box-shadow: 0 0 2em rgba(0,0,0,0.2); padding: 0; width: 90%; max-width: 500px; }
         dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
         .modal-content { padding: 20px; }
@@ -44,6 +50,7 @@
     <div class="container">
         <h1>แอปจัดการเงินกู้</h1>
         <button id="add-new-btn">+ เพิ่มลูกค้าใหม่</button>
+        <button id="show-closed-btn" class="secondary">ดูรายการที่ปิดแล้ว</button>
         <div id="customer-list-container">
             <h2>รายชื่อลูกค้า (Active)</h2>
             <div id="customer-list"><div class="loader"></div></div>
@@ -56,38 +63,30 @@
             <h2 id="modal-title">ข้อมูลลูกค้า</h2>
             <form id="customer-form">
                 <input type="hidden" id="customerId" name="customerId">
-                <label for="borrowerName">ชื่อผู้กู้:</label>
-                <input type="text" id="borrowerName" name="borrowerName" required>
-                <label for="loanAmount">ยอดกู้ (บาท):</label>
-                <input type="number" id="loanAmount" name="loanAmount" required>
-                <label for="interestRate">ดอกเบี้ย (%):</label>
-                <input type="number" id="interestRate" name="interestRate" required>
-                <label for="loanDays">จำนวนวัน:</label>
-                <input type="number" id="loanDays" name="loanDays" required>
-                <label for="imageFile1">รูปภาพผู้กู้ 1:</label>
-                <input type="file" id="imageFile1" name="imageFile1" accept="image/*">
-                <img id="preview1" class="preview-img" src="">
-                <label for="imageFile2">รูปภาพผู้กู้ 2:</label>
-                <input type="file" id="imageFile2" name="imageFile2" accept="image/*">
-                <img id="preview2" class="preview-img" src="">
-                <div class="modal-actions">
-                    <button type="submit" id="save-btn">บันทึกข้อมูล</button>
-                </div>
+                <label for="borrowerName">ชื่อผู้กู้:</label> <input type="text" id="borrowerName" name="borrowerName" required>
+                <label for="loanAmount">ยอดกู้ (บาท):</label> <input type="number" id="loanAmount" name="loanAmount" required>
+                <label for="interestRate">ดอกเบี้ย (%):</label> <input type="number" id="interestRate" name="interestRate" required>
+                <label for="loanDays">จำนวนวัน:</label> <input type="number" id="loanDays" name="loanDays" required>
+                <label for="imageFile1">รูปภาพผู้กู้ 1:</label> <input type="file" id="imageFile1" name="imageFile1" accept="image/*"> <img id="preview1" class="preview-img" src="">
+                <label for="imageFile2">รูปภาพผู้กู้ 2:</label> <input type="file" id="imageFile2" name="imageFile2" accept="image/*"> <img id="preview2" class="preview-img" src="">
+                <div class="modal-actions"><button type="submit" id="save-btn">บันทึกข้อมูล</button></div>
             </form>
             <div id="details-view" style="display:none;">
                 <p><strong>ชื่อ:</strong> <span id="detail-name"></span></p>
                 <p><strong>ยอดกู้:</strong> <span id="detail-amount"></span> บาท</p>
                 <p><strong>ดอกเบี้ย:</strong> <span id="detail-interest-rate"></span>%</p>
                 <p><strong>สถานะ:</strong> <span id="detail-status"></span></p>
-                <div class="image-container">
-                    <img id="detail-img1" src="" class="detail-img">
-                    <img id="detail-img2" src="" class="detail-img">
-                </div>
-                <div class="modal-actions">
-                    <button id="edit-btn">แก้ไข</button>
-                    <button id="close-loan-btn" class="danger">ปิดยอด</button>
-                </div>
+                <div class="image-container"><img id="detail-img1" src="" class="detail-img"><img id="detail-img2" src="" class="detail-img"></div>
+                <div class="modal-actions"><button id="edit-btn">แก้ไข</button><button id="close-loan-btn" class="danger">ปิดยอด</button></div>
             </div>
+        </div>
+    </dialog>
+
+    <dialog id="closed-loans-dialog">
+        <div class="modal-content">
+            <button class="close-btn" autofocus> &times; </button>
+            <h2>รายการที่ปิดยอดแล้ว</h2>
+            <div id="closed-loans-list"></div>
         </div>
     </dialog>
 
@@ -97,7 +96,7 @@
     
     <script>
         const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W´3eMu6x-LqU';
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -108,19 +107,25 @@
         const detailsView = document.getElementById('details-view');
         const spinner = document.getElementById('spinner');
         const addNewBtn = document.getElementById('add-new-btn');
-        const closeBtn = document.querySelector('.close-btn');
+        const closeBtn = document.querySelector('#customer-dialog .close-btn');
+        const showClosedBtn = document.getElementById('show-closed-btn');
+        const closedLoansDialog = document.getElementById('closed-loans-dialog');
+        const closeClosedDialogBtn = document.querySelector('#closed-loans-dialog .close-btn');
+        const closedLoansList = document.getElementById('closed-loans-list');
 
         document.addEventListener('DOMContentLoaded', loadCustomers);
         addNewBtn.addEventListener('click', () => openFormModal());
         closeBtn.addEventListener('click', () => dialog.close());
         form.addEventListener('submit', handleFormSubmit);
+        showClosedBtn.addEventListener('click', showClosedLoans);
+        closeClosedDialogBtn.addEventListener('click', () => closedLoansDialog.close());
 
         async function loadCustomers() {
             customerList.innerHTML = '<div class="loader"></div>';
-            const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Active').order('created_at', { ascending: false });
+            const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Active').order('due_date', { ascending: true });
             if (error) {
                 console.error('Error fetching customers:', error);
-                customerList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}</p>`;
+                customerList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
                 return;
             }
             displayCustomers(data);
@@ -137,7 +142,10 @@
                 item.className = 'customer-item';
                 item.dataset.customerId = cust.id;
                 item.onclick = () => viewCustomerDetails(cust.id);
-                item.innerHTML = `<div class="customer-info">${cust.borrower_name} - ${cust.loan_amount.toLocaleString()} บาท</div><div class="customer-status status-${cust.status}">${cust.status}</div>`;
+                const statusClass = getDueDateStatusClass(cust.due_date);
+                item.classList.add(statusClass);
+                const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
+                item.innerHTML = `<div><div class="customer-info">${cust.borrower_name} - ${cust.loan_amount.toLocaleString()} บาท</div><div style="font-size: 14px; color: #555;">ครบกำหนด: ${new Date(cust.due_date).toLocaleDateString('th-TH')} | ดอกเบี้ย: ${interestPayable.toLocaleString()} บาท</div></div><div class="customer-status status-${cust.status}">${cust.status}</div>`;
                 customerList.appendChild(item);
             });
         }
@@ -147,6 +155,10 @@
             spinner.style.display = 'block';
             const formData = new FormData(form);
             const customerId = formData.get('customerId');
+            const loanDays = parseInt(formData.get('loanDays'));
+            const today = new Date();
+            const dueDate = new Date(new Date().setDate(today.getDate() + loanDays));
+            const formattedDueDate = dueDate.toISOString().split('T')[0];
             let imageUrl1 = document.getElementById('preview1').src;
             let imageUrl2 = document.getElementById('preview2').src;
             const file1 = formData.get('imageFile1');
@@ -157,9 +169,10 @@
                 borrower_name: formData.get('borrowerName'),
                 loan_amount: parseFloat(formData.get('loanAmount')),
                 interest_rate: parseFloat(formData.get('interestRate')),
-                loan_days: parseInt(formData.get('loanDays')),
+                loan_days: loanDays,
                 image_url_1: imageUrl1,
                 image_url_2: imageUrl2,
+                due_date: formattedDueDate,
             };
             let result;
             if (customerId) {
@@ -177,13 +190,45 @@
             }
         }
 
+        function getDueDateStatusClass(dueDateString) {
+            if (!dueDateString) return '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(dueDateString);
+            const diffTime = dueDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays < 1) { return 'status-overdue'; }
+            else if (diffDays === 1) { return 'status-due-soon'; }
+            return '';
+        }
+
+        async function showClosedLoans() {
+            spinner.style.display = 'block';
+            closedLoansList.innerHTML = '<div class="loader"></div>';
+            const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Closed').order('created_at', { ascending: false });
+            spinner.style.display = 'none';
+            if (error) {
+                closedLoansList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
+                return;
+            }
+            if (data.length === 0) {
+                closedLoansList.innerHTML = '<p>ยังไม่มีรายการที่ปิดยอด</p>';
+            } else {
+                closedLoansList.innerHTML = '';
+                data.forEach(cust => {
+                    const item = document.createElement('div');
+                    item.className = 'closed-item';
+                    item.innerHTML = `<span>${cust.borrower_name}</span><span>ปิดยอดเมื่อ: ${new Date(cust.created_at).toLocaleDateString('th-TH')}</span>`;
+                    closedLoansList.appendChild(item);
+                });
+            }
+            closedLoansDialog.showModal();
+        }
+
         async function uploadImage(file) {
             const fileName = `${Date.now()}_${file.name}`;
             const { data, error } = await supabaseClient.storage.from('images').upload(fileName, file);
-            if (error) {
-                console.error('Image Upload Error:', error);
-                return null;
-            }
+            if (error) { console.error('Image Upload Error:', error); return null; }
             const { data: { publicUrl } } = supabaseClient.storage.from('images').getPublicUrl(fileName);
             return publicUrl;
         }
