@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอปจัดการเงินกู้ (รวมไฟล์)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #005A9C; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif;}
+        button:hover { background-color: #0056b3; }
+        button#add-new-btn { display: block; width: 100%; margin-bottom: 20px; font-size: 18px; padding: 12px; }
+        button.danger { background-color: #dc3545; }
+        button.danger:hover { background-color: #c82333; }
+        .customer-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; cursor: pointer; }
+        .customer-item:hover { background-color: #f0f0f0; }
+        /* ... โค้ด CSS อื่นๆ ทั้งหมดจากไฟล์ style.css ... */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>แอปจัดการเงินกู้</h1>
+        <button id="add-new-btn">+ เพิ่มลูกค้าใหม่</button>
+        <div id="customer-list-container">
+            <h2>รายชื่อลูกค้า (Active)</h2>
+            <div id="customer-list"><div class="loader"></div></div>
+        </div>
+    </div>
+
+    <dialog id="customer-dialog">
+        </dialog>
+
+    <div id="spinner" class="spinner" style="display:none;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- DOM Elements ---
+        const customerList = document.getElementById('customer-list');
+        const dialog = document.getElementById('customer-dialog');
+        
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', loadCustomers);
+
+        // --- Core Functions ---
+        async function loadCustomers() {
+            // ... โค้ด JavaScript อื่นๆ ทั้งหมดจากไฟล์ script.js ...
+        }
+
+        // ... ฟังก์ชันอื่นๆ ทั้งหมด ...
+    </script>
+</body>
+</html>
