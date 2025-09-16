@@ -10,7 +10,7 @@
 
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1, h2 { color: #005A9C; }
         button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif;}
         button:hover { background-color: #0056b3; }
@@ -19,16 +19,45 @@
         button.danger:hover { background-color: #c82333; }
         button.secondary { background-color: #6c757d; width: 100%; margin-bottom: 20px; }
         button.secondary:hover { background-color: #5a6268; }
-        #customer-list { margin-top: 15px; }
-        .customer-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; cursor: pointer; border-left: 5px solid transparent; }
-        .customer-item:hover { background-color: #f0f0f0; }
-        .customer-item.status-overdue { border-left-color: #dc3545; }
-        .customer-item.status-due-soon { border-left-color: #ffc107; }
-        .customer-info { font-size: 18px; }
-        .customer-status { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; }
+
+        /* --- NEW: Table/Grid Styles --- */
+        .grid-container {
+            margin-top: 20px;
+        }
+        .grid-header, .grid-row {
+            display: grid;
+            grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr; /* 5 columns */
+            gap: 10px;
+            padding: 12px 15px;
+            align-items: center;
+        }
+        .grid-header {
+            font-weight: bold;
+            background-color: #e9ecef;
+            border-bottom: 2px solid #dee2e6;
+            border-radius: 5px 5px 0 0;
+        }
+        .grid-row {
+            border: 1px solid #ddd;
+            border-top: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-left: 5px solid transparent;
+        }
+        .grid-row:first-child {
+            border-top: 1px solid #ddd;
+        }
+        .grid-row:hover {
+            background-color: #f0f0f0;
+        }
+        .grid-row.status-overdue { border-left-color: #dc3545; }
+        .grid-row.status-due-soon { border-left-color: #ffc107; }
+
+        .customer-status { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; text-align: center; }
         .status-Active { background-color: #28a745; }
         .status-Closed { background-color: #6c757d; }
         .status-Paid { background-color: #007bff; }
+        
         .closed-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
         .closed-item:last-child { border-bottom: none; }
         dialog { border: none; border-radius: 8px; box-shadow: 0 0 2em rgba(0,0,0,0.2); padding: 0; width: 90%; max-width: 500px; }
@@ -52,9 +81,17 @@
         <h1>แอปจัดการเงินกู้</h1>
         <button id="add-new-btn">+ เพิ่มลูกค้าใหม่</button>
         <button id="show-closed-btn" class="secondary">ดูรายการที่ปิดแล้ว</button>
-        <div id="customer-list-container">
-            <h2>รายชื่อลูกค้า (Active)</h2>
-            <div id="customer-list"><div class="loader"></div></div>
+        <div id="customer-list-container" class="grid-container">
+            <h2>รายชื่อลูกค้า</h2>
+            <div class="grid-header">
+                <div>ชื่อผู้กู้</div>
+                <div>ครบกำหนดจ่าย</div>
+                <div>ยอดกู้ (บาท)</div>
+                <div>ดอกเบี้ย (บาท)</div>
+                <div>สถานะ</div>
+            </div>
+            <div id="customer-list">
+                </div>
         </div>
     </div>
 
@@ -136,27 +173,38 @@
             displayCustomers(data);
         }
 
+        // --- UPDATED: displayCustomers function to create a grid row ---
         function displayCustomers(customers) {
             customerList.innerHTML = '';
             if (customers.length === 0) {
-                customerList.innerHTML = '<p>ยังไม่มีข้อมูลลูกค้า</p>';
+                customerList.innerHTML = '<p style="padding: 15px;">ยังไม่มีข้อมูลลูกค้า</p>';
                 return;
             }
             customers.forEach(cust => {
-                const item = document.createElement('div');
-                item.className = 'customer-item';
-                item.dataset.customerId = cust.id;
-                item.onclick = () => viewCustomerDetails(cust.id);
+                const row = document.createElement('div');
+                row.className = 'grid-row';
+                row.dataset.customerId = cust.id;
+                row.onclick = () => viewCustomerDetails(cust.id);
+                
                 const statusClass = getDueDateStatusClass(cust.due_date);
                 if (statusClass) {
-                    item.classList.add(statusClass);
+                    row.classList.add(statusClass);
                 }
+                
                 const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
-                item.innerHTML = `<div><div class="customer-info">${cust.borrower_name} - ${cust.loan_amount.toLocaleString()} บาท</div><div style="font-size: 14px; color: #555;">ครบกำหนด: ${new Date(cust.due_date).toLocaleDateString('th-TH')} | ดอกเบี้ย: ${interestPayable.toLocaleString()} บาท</div></div><div class="customer-status status-${cust.status}">${cust.status}</div>`;
-                customerList.appendChild(item);
+
+                row.innerHTML = `
+                    <div>${cust.borrower_name}</div>
+                    <div>${new Date(cust.due_date).toLocaleDateString('th-TH')}</div>
+                    <div>${cust.loan_amount.toLocaleString()}</div>
+                    <div>${interestPayable.toLocaleString()}</div>
+                    <div><span class="customer-status status-${cust.status}">${cust.status}</span></div>
+                `;
+                customerList.appendChild(row);
             });
         }
 
+        // --- All other JavaScript functions remain the same ---
         async function handleFormSubmit(event) {
             event.preventDefault();
             spinner.style.display = 'block';
@@ -182,10 +230,7 @@
                 due_date: formattedDueDate,
             };
             
-            // For new customers, set status to Active
-            if (!customerId) {
-                loanData.status = 'Active';
-            }
+            if (!customerId) { loanData.status = 'Active'; }
 
             let result;
             if (customerId) {
