@@ -1,12 +1,8 @@
-// ✅ โค้ดส่วน script ที่แก้ไขแล้วทั้งหมด
-
 const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
 
-// --- FIX: เปลี่ยนชื่อตัวแปรตรงนี้ ---
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- DOM Elements ---
 const customerList = document.getElementById('customer-list');
 const dialog = document.getElementById('customer-dialog');
 const modalTitle = document.getElementById('modal-title');
@@ -16,17 +12,14 @@ const spinner = document.getElementById('spinner');
 const addNewBtn = document.getElementById('add-new-btn');
 const closeBtn = document.querySelector('.close-btn');
 
-// --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', loadCustomers);
 addNewBtn.addEventListener('click', () => openFormModal());
 closeBtn.addEventListener('click', () => dialog.close());
 form.addEventListener('submit', handleFormSubmit);
 
-// --- Core Functions ---
 async function loadCustomers() {
     customerList.innerHTML = '<div class="loader"></div>';
     
-    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
     const { data, error } = await supabaseClient
         .from('loans')
         .select('*')
@@ -93,10 +86,8 @@ async function handleFormSubmit(event) {
 
     let result;
     if (customerId) {
-        // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
         result = await supabaseClient.from('loans').update(loanData).eq('id', customerId);
     } else {
-        // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
         result = await supabaseClient.from('loans').insert([loanData]);
     }
     
@@ -114,7 +105,6 @@ async function handleFormSubmit(event) {
 async function uploadImage(file) {
     const fileName = `${Date.now()}_${file.name}`;
     
-    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
     const { data, error } = await supabaseClient.storage
         .from('images')
         .upload(fileName, file);
@@ -124,7 +114,6 @@ async function uploadImage(file) {
         return null;
     }
     
-    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
     const { data: { publicUrl } } = supabaseClient.storage
         .from('images')
         .getPublicUrl(fileName);
@@ -132,7 +121,6 @@ async function uploadImage(file) {
     return publicUrl;
 }
 
-// --- Modal Control ---
 function openFormModal(customerData = null) {
     form.reset();
     document.getElementById('preview1').style.display = 'none';
@@ -168,7 +156,6 @@ function openFormModal(customerData = null) {
 async function viewCustomerDetails(customerId) {
     spinner.style.display = 'block';
     
-    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
     const { data: customer, error } = await supabaseClient
         .from('loans')
         .select('*')
@@ -207,7 +194,6 @@ async function closeLoan(customerId, customerName) {
 
     spinner.style.display = 'block';
     
-    // --- FIX: อัปเดตการเรียกใช้ตรงนี้ ---
     const { error } = await supabaseClient
         .from('loans')
         .update({ status: 'Closed' })
