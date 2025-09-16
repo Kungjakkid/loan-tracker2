@@ -9,8 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
         h1, h2 { color: #005A9C; }
         button { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; font-family: 'Sarabun', sans-serif;}
         button:hover { background-color: #0056b3; }
@@ -20,56 +20,51 @@
         button.secondary { background-color: #6c757d; width: 100%; margin-bottom: 20px; }
         button.secondary:hover { background-color: #5a6268; }
 
-        /* --- NEW: Table/Grid Styles --- */
-        .grid-container {
-            margin-top: 20px;
+        /* --- NEW: Card Styles --- */
+        #customer-list { display: flex; flex-direction: column; gap: 15px; }
+        .customer-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-left: 5px solid transparent; /* For status color */
         }
-        .grid-header, .grid-row {
-            display: grid;
-            grid-template-columns: 2.5fr 1.5fr 1fr 1fr 1fr; /* 5 columns */
-            gap: 10px;
-            padding: 12px 15px;
-            align-items: center;
-        }
-        .grid-header {
-            font-weight: bold;
-            background-color: #e9ecef;
-            border-bottom: 2px solid #dee2e6;
-            border-radius: 5px 5px 0 0;
-        }
-        .grid-row {
-            border: 1px solid #ddd;
-            border-top: none;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-left: 5px solid transparent;
-        }
-        .grid-row:first-child {
-            border-top: 1px solid #ddd;
-        }
-        .grid-row:hover {
-            background-color: #f0f0f0;
-        }
-        .grid-row.status-overdue { border-left-color: #dc3545; }
-        .grid-row.status-due-soon { border-left-color: #ffc107; }
+        .customer-card.status-overdue { border-left-color: #dc3545; }
+        .customer-card.status-due-soon { border-left-color: #ffc107; }
 
-        .customer-status { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; text-align: center; }
-        .status-Active { background-color: #28a745; }
-        .status-Closed { background-color: #6c757d; }
-        .status-Paid { background-color: #007bff; }
-        
+        .card-header, .card-footer { display: flex; justify-content: space-between; align-items: center; }
+        .customer-name { font-size: 1.25em; font-weight: bold; color: #333; }
+        .card-status { font-size: 0.9em; color: #555; }
+        .card-body { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; }
+        .card-body .label { color: #666; }
+        .card-body .value { font-weight: bold; text-align: right; }
+        .card-footer { flex-wrap: wrap; gap: 10px; }
+        .action-button {
+            background: none;
+            border: 1px solid #ddd;
+            color: #333;
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        .action-button:hover { background-color: #f0f0f0; }
+        .action-button.danger { color: #dc3545; border-color: #dc3545; }
+        .action-button.danger:hover { background-color: #dc3545; color: white; }
+        .action-button.primary { color: #007bff; border-color: #007bff; }
+        .action-button.primary:hover { background-color: #007bff; color: white; }
+
+        /* Other styles remain mostly the same */
         .closed-item { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        .closed-item:last-child { border-bottom: none; }
         dialog { border: none; border-radius: 8px; box-shadow: 0 0 2em rgba(0,0,0,0.2); padding: 0; width: 90%; max-width: 500px; }
         dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
         .modal-content { padding: 20px; position: relative; }
         .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; }
         form label { display: block; margin-top: 10px; font-weight: bold; }
-        form input[type="text"], form input[type="number"], form input[type="file"] { width: calc(100% - 20px); padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
-        .modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-        .preview-img, .detail-img { max-width: 100px; margin-top: 10px; border-radius: 5px; display: none; }
-        .image-container { display: flex; gap: 10px; margin-top: 15px; }
-        .detail-img { display: block; max-width: 150px; }
+        form input { width: calc(100% - 20px); padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        .modal-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinner { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.7); z-index: 2000; }
@@ -81,15 +76,8 @@
         <h1>แอปจัดการเงินกู้</h1>
         <button id="add-new-btn">+ เพิ่มลูกค้าใหม่</button>
         <button id="show-closed-btn" class="secondary">ดูรายการที่ปิดแล้ว</button>
-        <div id="customer-list-container" class="grid-container">
+        <div id="customer-list-container">
             <h2>รายชื่อลูกค้า</h2>
-            <div class="grid-header">
-                <div>ชื่อผู้กู้</div>
-                <div>ครบกำหนดจ่าย</div>
-                <div>ยอดกู้ (บาท)</div>
-                <div>ดอกเบี้ย (บาท)</div>
-                <div>สถานะ</div>
-            </div>
             <div id="customer-list">
                 </div>
         </div>
@@ -105,22 +93,10 @@
                 <label for="loanAmount">ยอดกู้ (บาท):</label> <input type="number" id="loanAmount" name="loanAmount" required>
                 <label for="interestRate">ดอกเบี้ย (%):</label> <input type="number" id="interestRate" name="interestRate" required>
                 <label for="loanDays">จำนวนวัน:</label> <input type="number" id="loanDays" name="loanDays" required>
-                <label for="imageFile1">รูปภาพผู้กู้ 1:</label> <input type="file" id="imageFile1" name="imageFile1" accept="image/*"> <img id="preview1" class="preview-img" src="">
-                <label for="imageFile2">รูปภาพผู้กู้ 2:</label> <input type="file" id="imageFile2" name="imageFile2" accept="image/*"> <img id="preview2" class="preview-img" src="">
+                <label for="imageFile1">รูปภาพผู้กู้ 1:</label> <input type="file" id="imageFile1" name="imageFile1" accept="image/*">
+                <label for="imageFile2">รูปภาพผู้กู้ 2:</label> <input type="file" id="imageFile2" name="imageFile2" accept="image/*">
                 <div class="modal-actions"><button type="submit" id="save-btn">บันทึกข้อมูล</button></div>
             </form>
-            <div id="details-view" style="display:none;">
-                <p><strong>ชื่อ:</strong> <span id="detail-name"></span></p>
-                <p><strong>ยอดกู้:</strong> <span id="detail-amount"></span> บาท</p>
-                <p><strong>ดอกเบี้ย:</strong> <span id="detail-interest-rate"></span>%</p>
-                <p><strong>สถานะ:</strong> <span id="detail-status"></span></p>
-                <div class="image-container"><img id="detail-img1" src="" class="detail-img"><img id="detail-img2" src="" class="detail-img"></div>
-                <div class="modal-actions">
-                    <button id="paid-interest-btn" class="secondary">จ่ายดอก</button>
-                    <button id="edit-btn">แก้ไข</button>
-                    <button id="close-loan-btn" class="danger">ปิดยอด</button>
-                </div>
-            </div>
         </div>
     </dialog>
 
@@ -146,7 +122,6 @@
         const dialog = document.getElementById('customer-dialog');
         const modalTitle = document.getElementById('modal-title');
         const form = document.getElementById('customer-form');
-        const detailsView = document.getElementById('details-view');
         const spinner = document.getElementById('spinner');
         const addNewBtn = document.getElementById('add-new-btn');
         const closeBtn = document.querySelector('#customer-dialog .close-btn');
@@ -173,7 +148,7 @@
             displayCustomers(data);
         }
 
-        // --- UPDATED: displayCustomers function to create a grid row ---
+        // --- UPDATED: displayCustomers function to build cards ---
         function displayCustomers(customers) {
             customerList.innerHTML = '';
             if (customers.length === 0) {
@@ -181,30 +156,45 @@
                 return;
             }
             customers.forEach(cust => {
-                const row = document.createElement('div');
-                row.className = 'grid-row';
-                row.dataset.customerId = cust.id;
-                row.onclick = () => viewCustomerDetails(cust.id);
+                const card = document.createElement('div');
+                card.className = 'customer-card';
                 
                 const statusClass = getDueDateStatusClass(cust.due_date);
                 if (statusClass) {
-                    row.classList.add(statusClass);
+                    card.classList.add(statusClass);
                 }
                 
                 const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
 
-                row.innerHTML = `
-                    <div>${cust.borrower_name}</div>
-                    <div>${new Date(cust.due_date).toLocaleDateString('th-TH')}</div>
-                    <div>${cust.loan_amount.toLocaleString()}</div>
-                    <div>${interestPayable.toLocaleString()}</div>
-                    <div><span class="customer-status status-${cust.status}">${cust.status}</span></div>
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="customer-name">${cust.borrower_name}</span>
+                        <span class="card-status">สถานะ: ${cust.status}</span>
+                    </div>
+                    <div class="card-body">
+                        <span class="label">เงินต้นปัจจุบัน:</span>
+                        <span class="value">${cust.loan_amount.toLocaleString()} บาท</span>
+                        <span class="label">ดอกเบี้ยที่ต้องจ่าย:</span>
+                        <span class="value">${interestPayable.toLocaleString()} บาท</span>
+                        <span class="label">วันครบกำหนด:</span>
+                        <span class="value">${new Date(cust.due_date).toLocaleDateString('th-TH')}</span>
+                    </div>
+                    <div class="card-footer">
+                        <button class="action-button primary pay-interest-btn">จ่ายดอก</button>
+                        <button class="action-button edit-btn">แก้ไข</button>
+                        <button class="action-button danger close-loan-btn">ปิดยอด</button>
+                    </div>
                 `;
-                customerList.appendChild(row);
+
+                // Attach event listeners to the new buttons within the card
+                card.querySelector('.pay-interest-btn').addEventListener('click', () => payInterest(cust.id, cust.borrower_name));
+                card.querySelector('.edit-btn').addEventListener('click', () => openFormModal(cust));
+                card.querySelector('.close-loan-btn').addEventListener('click', () => closeLoan(cust.id, cust.borrower_name));
+
+                customerList.appendChild(card);
             });
         }
 
-        // --- All other JavaScript functions remain the same ---
         async function handleFormSubmit(event) {
             event.preventDefault();
             spinner.style.display = 'block';
@@ -214,21 +204,20 @@
             const today = new Date();
             const dueDate = new Date(new Date().setDate(today.getDate() + loanDays));
             const formattedDueDate = dueDate.toISOString().split('T')[0];
-            let imageUrl1 = document.getElementById('preview1').src;
-            let imageUrl2 = document.getElementById('preview2').src;
-            const file1 = formData.get('imageFile1');
-            if (file1 && file1.size > 0) { imageUrl1 = await uploadImage(file1); }
-            const file2 = formData.get('imageFile2');
-            if (file2 && file2.size > 0) { imageUrl2 = await uploadImage(file2); }
+            
             const loanData = {
                 borrower_name: formData.get('borrowerName'),
                 loan_amount: parseFloat(formData.get('loanAmount')),
                 interest_rate: parseFloat(formData.get('interestRate')),
                 loan_days: loanDays,
-                image_url_1: imageUrl1,
-                image_url_2: imageUrl2,
                 due_date: formattedDueDate,
             };
+            
+            // Handle image uploads only if they are provided
+            const file1 = formData.get('imageFile1');
+            if (file1 && file1.size > 0) { loanData.image_url_1 = await uploadImage(file1); }
+            const file2 = formData.get('imageFile2');
+            if (file2 && file2.size > 0) { loanData.image_url_2 = await uploadImage(file2); }
             
             if (!customerId) { loanData.status = 'Active'; }
 
@@ -258,6 +247,20 @@
             if (diffDays < 1) { return 'status-overdue'; }
             else if (diffDays === 1) { return 'status-due-soon'; }
             return null;
+        }
+
+        // NEW: payInterest function for the button on the card
+        async function payInterest(customerId, customerName) {
+            if (!confirm(`ยืนยันการจ่ายดอกเบี้ยของ ${customerName}?`)) return;
+            spinner.style.display = 'block';
+            const { error } = await supabaseClient.from('loans').update({ status: 'Paid' }).eq('id', customerId);
+            spinner.style.display = 'none';
+            if (error) {
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+            } else {
+                alert('บันทึกการจ่ายดอกเบี้ยสำเร็จ');
+                loadCustomers();
+            }
         }
 
         async function showClosedLoans() {
@@ -293,10 +296,6 @@
 
         function openFormModal(customerData = null) {
             form.reset();
-            document.getElementById('preview1').style.display = 'none';
-            document.getElementById('preview2').style.display = 'none';
-            form.style.display = 'block';
-            detailsView.style.display = 'none';
             if (customerData) {
                 modalTitle.innerText = 'แก้ไขข้อมูลลูกค้า';
                 document.getElementById('customerId').value = customerData.id;
@@ -304,57 +303,9 @@
                 document.getElementById('loanAmount').value = customerData.loan_amount;
                 document.getElementById('interestRate').value = customerData.interest_rate;
                 document.getElementById('loanDays').value = customerData.loan_days;
-                if (customerData.image_url_1) {
-                    document.getElementById('preview1').src = customerData.image_url_1;
-                    document.getElementById('preview1').style.display = 'block';
-                }
-                if (customerData.image_url_2) {
-                    document.getElementById('preview2').src = customerData.image_url_2;
-                    document.getElementById('preview2').style.display = 'block';
-                }
             } else {
                 modalTitle.innerText = 'เพิ่มลูกค้าใหม่';
             }
-            dialog.showModal();
-        }
-
-        async function viewCustomerDetails(customerId) {
-            spinner.style.display = 'block';
-            const { data: customer, error } = await supabaseClient.from('loans').select('*').eq('id', customerId).single();
-            spinner.style.display = 'none';
-            if (error) {
-                alert('ไม่สามารถดึงข้อมูลลูกค้าได้: ' + error.message);
-                return;
-            }
-            form.style.display = 'none';
-            detailsView.style.display = 'block';
-            modalTitle.innerText = 'รายละเอียดลูกค้า';
-            document.getElementById('detail-name').innerText = customer.borrower_name;
-            document.getElementById('detail-amount').innerText = customer.loan_amount.toLocaleString();
-            document.getElementById('detail-interest-rate').innerText = customer.interest_rate;
-            document.getElementById('detail-status').innerText = customer.status;
-            document.getElementById('detail-img1').src = customer.image_url_1 || 'https://via.placeholder.com/150?text=No+Image';
-            document.getElementById('detail-img2').src = customer.image_url_2 || 'https://via.placeholder.com/150?text=No+Image';
-            const editBtn = document.getElementById('edit-btn');
-            const closeLoanBtn = document.getElementById('close-loan-btn');
-            const paidInterestBtn = document.getElementById('paid-interest-btn');
-            
-            editBtn.onclick = () => openFormModal(customer);
-            closeLoanBtn.onclick = () => closeLoan(customer.id, customer.borrower_name);
-            
-            paidInterestBtn.onclick = async () => {
-                if (!confirm(`ยืนยันการจ่ายดอกเบี้ยของ ${customer.borrower_name}?`)) return;
-                spinner.style.display = 'block';
-                const { error } = await supabaseClient.from('loans').update({ status: 'Paid' }).eq('id', customerId);
-                spinner.style.display = 'none';
-                if (error) {
-                    alert('เกิดข้อผิดพลาด: ' + error.message);
-                } else {
-                    alert('บันทึกการจ่ายดอกเบี้ยสำเร็จ');
-                    dialog.close();
-                    loadCustomers();
-                }
-            };
             dialog.showModal();
         }
 
@@ -367,7 +318,6 @@
                 alert('เกิดข้อผิดพลาดในการปิดยอด: ' + error.message);
             } else {
                 alert('ปิดยอดเรียบร้อยแล้ว');
-                dialog.close();
                 loadCustomers();
             }
         }
