@@ -65,7 +65,6 @@
         .modal-actions { margin-top: 20px; }
         .modal-actions button { width: 100%; padding: 12px; }
 
-        /* UPDATED: Styles for closed items */
         .closed-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .closed-item:hover { background-color: #f8f9fa; }
         .closed-item:last-child { border-bottom: none; }
@@ -83,12 +82,10 @@
             <div class="label">ยอดค้างชำระรวม</div>
             <div id="total-due" class="total-amount">฿0</div>
         </div>
-
         <div class="main-actions">
             <button id="add-new-btn" class="action-btn primary">+ เพิ่มลูกค้าใหม่</button>
             <button id="show-closed-btn" class="action-btn">ดูรายการที่ปิดแล้ว</button>
         </div>
-
         <div id="customer-list-container">
             <div id="customer-list"></div>
         </div>
@@ -110,7 +107,6 @@
             </form>
         </div>
     </dialog>
-
     <dialog id="details-dialog">
         <div class="modal-content">
             <button class="close-btn">&times;</button>
@@ -119,7 +115,6 @@
             <div id="detail-body" class="modal-details"></div>
         </div>
     </dialog>
-
     <dialog id="closed-loans-dialog">
         <div class="modal-content">
             <button class="close-btn">&times;</button>
@@ -127,30 +122,24 @@
             <div id="closed-loans-list"></div>
         </div>
     </dialog>
-
     <div id="spinner" class="spinner" style="display:none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <script>
-        const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
+        const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const customerList = document.getElementById('customer-list');
         const addNewBtn = document.getElementById('add-new-btn');
         const spinner = document.getElementById('spinner');
-
         const customerDialog = document.getElementById('customer-dialog');
         const modalTitle = document.getElementById('modal-title');
         const form = document.getElementById('customer-form');
         const closeCustomerDialogBtn = document.querySelector('#customer-dialog .close-btn');
-
         const detailsDialog = document.getElementById('details-dialog');
         const closeDetailsDialogBtn = document.querySelector('#details-dialog .close-btn');
-        
         const totalDueEl = document.getElementById('total-due');
-
         const showClosedBtn = document.getElementById('show-closed-btn');
         const closedLoansDialog = document.getElementById('closed-loans-dialog');
         const closedLoansList = document.getElementById('closed-loans-list');
@@ -168,7 +157,6 @@
             spinner.style.display = 'block';
             const { data: customers, error } = await supabaseClient.from('loans').select('*').not('status', 'eq', 'Closed').order('due_date', { ascending: true });
             spinner.style.display = 'none';
-
             if (error) {
                 console.error('Error fetching customers:', error);
                 customerList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
@@ -188,10 +176,8 @@
                 const card = document.createElement('div');
                 card.className = 'customer-card';
                 card.onclick = () => viewCustomerDetails(cust.id);
-                
                 const statusClass = getDueDateStatusClass(cust.due_date);
                 if (statusClass) { card.classList.add(statusClass); }
-                
                 const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
                 card.innerHTML = `
                     <div class="card-header">
@@ -204,15 +190,13 @@
                         <span class="label">วันครบกำหนด:</span><span class="value">${new Date(cust.due_date).toLocaleDateString('th-TH')}</span>
                     </div>
                     <div class="card-footer">
-                        <button class="action-button pay-interest-btn">จ่ายดอก</button>
+                        <button class="action-button pay-interest-btn">จ่ายดอก (ต่อสัญญา)</button>
                         <button class="action-button edit-btn">แก้ไข</button>
                         <button class="action-button close-loan-btn">ปิดยอด</button>
                     </div>`;
-                
                 card.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openFormModal(cust); });
                 card.querySelector('.close-loan-btn').addEventListener('click', (e) => { e.stopPropagation(); closeLoan(cust.id, cust.borrower_name); });
                 card.querySelector('.pay-interest-btn').addEventListener('click', (e) => { e.stopPropagation(); payInterest(cust.id, cust.borrower_name); });
-
                 customerList.appendChild(card);
             });
         }
@@ -268,16 +252,12 @@
                 alert('ไม่สามารถดึงข้อมูลลูกค้าได้: ' + error.message);
                 return;
             }
-            
             document.getElementById('detail-name-title').textContent = customer.borrower_name;
             document.getElementById('detail-img').src = customer.image_url_1 || 'https://via.placeholder.com/400x300?text=No+Image';
-            
             const interest = customer.loan_amount * (customer.interest_rate / 100);
             const total = customer.loan_amount + interest;
-            
             const startDate = new Date(customer.due_date);
             startDate.setDate(startDate.getDate() - customer.loan_days);
-
             document.getElementById('detail-body').innerHTML = `
                 <p><strong>ชื่อลูกค้า:</strong> <b>${customer.borrower_name}</b></p>
                 <p><strong>สถานะ:</strong> <b>${customer.status || 'N/A'}</b></p>
@@ -287,7 +267,6 @@
                 <p><strong>วันที่กู้:</strong> <b>${startDate.toLocaleDateString('th-TH')}</b></p>
                 <p><strong>วันครบกำหนด:</strong> <b>${new Date(customer.due_date).toLocaleDateString('th-TH')}</b></p>
             `;
-            
             detailsDialog.showModal();
         }
 
@@ -304,13 +283,48 @@
             customerDialog.showModal();
         }
 
+        // --- UPDATED: payInterest function to extend the due date ---
         async function payInterest(customerId, customerName) {
-            if (!confirm(`ยืนยันการจ่ายดอกเบี้ยของ ${customerName}?`)) return;
+            if (!confirm(`ยืนยันการจ่ายดอกและต่อสัญญาสำหรับ ${customerName}?\n(วันครบกำหนดจะถูกเลื่อนออกไป)`)) return;
+            
             spinner.style.display = 'block';
-            const { error } = await supabaseClient.from('loans').update({ status: 'Paid' }).eq('id', customerId);
+
+            // 1. Fetch the current loan data to get due_date and loan_days
+            const { data: customer, error: fetchError } = await supabaseClient
+                .from('loans')
+                .select('due_date, loan_days')
+                .eq('id', customerId)
+                .single();
+
+            if (fetchError) {
+                spinner.style.display = 'none';
+                alert('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + fetchError.message);
+                return;
+            }
+
+            // 2. Calculate the new due date
+            const currentDueDate = new Date(customer.due_date);
+            const loanDays = customer.loan_days;
+            const newDueDate = new Date(currentDueDate.setDate(currentDueDate.getDate() + loanDays));
+            const formattedNewDueDate = newDueDate.toISOString().split('T')[0];
+
+            // 3. Update the database with the new due date and reset status
+            const { error: updateError } = await supabaseClient
+                .from('loans')
+                .update({ 
+                    due_date: formattedNewDueDate,
+                    status: 'Active' // Reset status to Active for the new period
+                })
+                .eq('id', customerId);
+            
             spinner.style.display = 'none';
-            if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); }
-            else { alert('บันทึกการจ่ายดอกเบี้ยสำเร็จ'); loadCustomers(); }
+
+            if (updateError) {
+                alert('เกิดข้อผิดพลาดในการอัปเดต: ' + updateError.message);
+            } else {
+                alert('ต่อสัญญาสำเร็จ! วันครบกำหนดถูกเลื่อนออกไปแล้ว');
+                loadCustomers();
+            }
         }
 
         async function closeLoan(customerId, customerName) {
@@ -344,18 +358,15 @@
             return null;
         }
         
-        // UPDATED: Function to show and handle closed loans
         async function showClosedLoans() {
             spinner.style.display = 'block';
             closedLoansList.innerHTML = '<div class="loader"></div>';
             const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Closed').order('created_at', { ascending: false });
             spinner.style.display = 'none';
-
             if (error) {
                 closedLoansList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
                 return;
             }
-
             if (data.length === 0) {
                 closedLoansList.innerHTML = '<p>ยังไม่มีรายการที่ปิดยอด</p>';
             } else {
@@ -363,15 +374,11 @@
                 data.forEach(cust => {
                     const item = document.createElement('div');
                     item.className = 'closed-item';
-                    
-                    // Add click event to view details
                     item.onclick = () => {
-                        closedLoansDialog.close(); // Close this popup first
-                        viewCustomerDetails(cust.id); // Then open the main details popup
+                        closedLoansDialog.close();
+                        viewCustomerDetails(cust.id);
                     };
-
                     const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
-
                     item.innerHTML = `
                         <div>
                             <span>${cust.borrower_name}</span>
