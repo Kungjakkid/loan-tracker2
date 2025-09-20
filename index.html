@@ -12,8 +12,10 @@
         :root {
             --primary-color: #007bff;
             --danger-color: #dc3545;
+            --danger-bg-color: #f8d7da; /* Light red for background */
             --success-color: #28a745;
             --warning-color: #ffc107;
+            --warning-bg-color: #fff3cd; /* Light yellow for background */
             --gray-color: #6c757d;
         }
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
@@ -34,17 +36,18 @@
         .customer-card {
             background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 20px; display: flex; flex-direction: column; gap: 15px; cursor: pointer;
-            border-left: 5px solid transparent; /* Default border */
-            transition: background-color 0.2s;
+            transition: background-color 0.3s;
         }
         .customer-card:hover { background-color: #f8f9fa; }
-        .customer-card.status-overdue { border-left-color: var(--danger-color); } /* Red border */
-        .customer-card.status-due-soon { border-left-color: var(--warning-color); } /* Yellow border */
+        
+        /* UPDATED: Change background color instead of border */
+        .customer-card.status-overdue { background-color: var(--danger-bg-color); } 
+        .customer-card.status-due-soon { background-color: var(--warning-bg-color); }
 
         .card-header, .card-footer { display: flex; justify-content: space-between; align-items: center; }
         .customer-name { font-size: 1.25em; font-weight: bold; }
         .card-status { font-size: 0.9em; font-weight: bold; color: var(--success-color); }
-        .card-body { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; padding: 15px 0; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
+        .card-body { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; padding: 15px 0; border-top: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; }
         .card-body .label { color: #666; }
         .card-body .value { font-weight: bold; text-align: right; }
         .card-footer { flex-wrap: wrap; gap: 10px; justify-content: flex-end;}
@@ -148,7 +151,6 @@
         
         const totalDueEl = document.getElementById('total-due');
 
-        // NEW: Closed Loans Dialog elements
         const showClosedBtn = document.getElementById('show-closed-btn');
         const closedLoansDialog = document.getElementById('closed-loans-dialog');
         const closedLoansList = document.getElementById('closed-loans-list');
@@ -159,8 +161,6 @@
         closeCustomerDialogBtn.addEventListener('click', () => customerDialog.close());
         closeDetailsDialogBtn.addEventListener('click', () => detailsDialog.close());
         form.addEventListener('submit', handleFormSubmit);
-
-        // NEW: Listener for closed loans button
         showClosedBtn.addEventListener('click', showClosedLoans);
         closeClosedDialogBtn.addEventListener('click', () => closedLoansDialog.close());
 
@@ -199,7 +199,7 @@
                 card.innerHTML = `
                     <div class="card-header">
                         <span class="customer-name">${cust.borrower_name}</span>
-                        <span class="card-status">กำลังดำเนินการ</span>
+                        <span class="card-status">${cust.status}</span>
                     </div>
                     <div class="card-body">
                         <span class="label">เงินต้นปัจจุบัน:</span><span class="value">${cust.loan_amount.toLocaleString()} บาท</span>
@@ -208,18 +208,14 @@
                     </div>
                     <div class="card-footer">
                         <button class="action-button pay-interest-btn">จ่ายดอก</button>
-                        <button class="action-button reduce-principal-btn">ชำระ/ลดต้น</button>
-                        <button class="action-button close-loan-btn">ปิดยอด</button>
                         <button class="action-button edit-btn">แก้ไข</button>
-                        <button class="action-button delete-btn">ลบ</button>
+                        <button class="action-button close-loan-btn">ปิดยอด</button>
                     </div>`;
                 
                 card.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openFormModal(cust); });
                 card.querySelector('.close-loan-btn').addEventListener('click', (e) => { e.stopPropagation(); closeLoan(cust.id, cust.borrower_name); });
                 card.querySelector('.pay-interest-btn').addEventListener('click', (e) => { e.stopPropagation(); payInterest(cust.id, cust.borrower_name); });
-                card.querySelector('.reduce-principal-btn').addEventListener('click', (e) => { e.stopPropagation(); alert('ฟังก์ชัน ชำระ/ลดต้น ยังไม่เปิดใช้งาน'); });
-                card.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); alert('ฟังก์ชัน ลบ ยังไม่เปิดใช้งาน'); });
-
+                
                 customerList.appendChild(card);
             });
         }
@@ -285,10 +281,12 @@
             const startDate = new Date(customer.due_date);
             startDate.setDate(startDate.getDate() - customer.loan_days);
 
+            // UPDATED: Added interest amount to the details popup
             document.getElementById('detail-body').innerHTML = `
                 <p><strong>ชื่อลูกค้า:</strong> <b>${customer.borrower_name}</b></p>
                 <p><strong>สถานะ:</strong> <b>${customer.status || 'N/A'}</b></p>
                 <p><strong>เงินต้น:</strong> <b>${customer.loan_amount.toLocaleString()} บาท</b></p>
+                <p><strong>ดอกเบี้ย:</strong> <b>${interest.toLocaleString()} บาท</b></p>
                 <p><strong>ยอดรวมที่ต้องชำระ:</strong> <b>${total.toLocaleString()} บาท</b></p>
                 <p><strong>วันที่กู้:</strong> <b>${startDate.toLocaleDateString('th-TH')}</b></p>
                 <p><strong>วันครบกำหนด:</strong> <b>${new Date(customer.due_date).toLocaleDateString('th-TH')}</b></p>
@@ -311,7 +309,12 @@
         }
 
         async function payInterest(customerId, customerName) {
-            alert(`ฟังก์ชัน "จ่ายดอก" สำหรับ ${customerName} ยังไม่เปิดใช้งาน`);
+            if (!confirm(`ยืนยันการจ่ายดอกเบี้ยของ ${customerName}?`)) return;
+            spinner.style.display = 'block';
+            const { error } = await supabaseClient.from('loans').update({ status: 'Paid' }).eq('id', customerId);
+            spinner.style.display = 'none';
+            if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); }
+            else { alert('บันทึกการจ่ายดอกเบี้ยสำเร็จ'); loadCustomers(); }
         }
 
         async function closeLoan(customerId, customerName) {
@@ -319,7 +322,7 @@
             spinner.style.display = 'block';
             const { error } = await supabaseClient.from('loans').update({ status: 'Closed' }).eq('id', customerId);
             spinner.style.display = 'none';
-            if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); }
+            if (error) { alert('เกิดข้อผิดพลาดในการปิดยอด: ' + error.message); }
             else { alert('ปิดยอดเรียบร้อยแล้ว'); loadCustomers(); }
         }
 
@@ -331,40 +334,29 @@
             return publicUrl;
         }
 
-        // --- UPDATED: Date checking logic ---
         function getDueDateStatusClass(dueDateString) {
             if (!dueDateString) return null;
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
             const dueDate = new Date(dueDateString);
             dueDate.setHours(0, 0, 0, 0);
-
             const diffTime = dueDate.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) {
-                return 'status-overdue'; // Overdue (Red)
-            } else if (diffDays === 0) {
-                return 'status-overdue'; // Due Today (Red)
-            } else if (diffDays === 1) {
-                return 'status-due-soon'; // Due Tomorrow (Yellow)
-            }
-            return null; // Not due yet
+            if (diffDays < 0) { return 'status-overdue'; }
+            else if (diffDays === 0) { return 'status-overdue'; }
+            else if (diffDays === 1) { return 'status-due-soon'; }
+            return null;
         }
         
-        // --- NEW: Function to show closed loans ---
         async function showClosedLoans() {
             spinner.style.display = 'block';
             closedLoansList.innerHTML = '<div class="loader"></div>';
             const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Closed').order('created_at', { ascending: false });
             spinner.style.display = 'none';
-
             if (error) {
                 closedLoansList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
                 return;
             }
-
             if (data.length === 0) {
                 closedLoansList.innerHTML = '<p>ยังไม่มีรายการที่ปิดยอด</p>';
             } else {
