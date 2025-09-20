@@ -12,10 +12,8 @@
         :root {
             --primary-color: #007bff;
             --danger-color: #dc3545;
-            --danger-bg-color: #f8d7da; /* Light red for background */
             --success-color: #28a745;
             --warning-color: #ffc107;
-            --warning-bg-color: #fff3cd; /* Light yellow for background */
             --gray-color: #6c757d;
         }
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
@@ -36,18 +34,17 @@
         .customer-card {
             background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 20px; display: flex; flex-direction: column; gap: 15px; cursor: pointer;
-            transition: background-color 0.3s;
+            border-left: 5px solid transparent; /* Default border */
+            transition: background-color 0.2s;
         }
         .customer-card:hover { background-color: #f8f9fa; }
-        
-        /* UPDATED: Change background color instead of border */
-        .customer-card.status-overdue { background-color: var(--danger-bg-color); } 
-        .customer-card.status-due-soon { background-color: var(--warning-bg-color); }
+        .customer-card.status-overdue { background-color: #f8d7da; }
+        .customer-card.status-due-soon { background-color: #fff3cd; }
 
         .card-header, .card-footer { display: flex; justify-content: space-between; align-items: center; }
         .customer-name { font-size: 1.25em; font-weight: bold; }
-        .card-status { font-size: 0.9em; font-weight: bold; color: var(--success-color); }
-        .card-body { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; padding: 15px 0; border-top: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; }
+        .card-status { font-size: 0.9em; font-weight: bold; }
+        .card-body { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; padding: 15px 0; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
         .card-body .label { color: #666; }
         .card-body .value { font-weight: bold; text-align: right; }
         .card-footer { flex-wrap: wrap; gap: 10px; justify-content: flex-end;}
@@ -68,7 +65,10 @@
         .modal-actions { margin-top: 20px; }
         .modal-actions button { width: 100%; padding: 12px; }
 
-        .closed-item { padding: 10px; border-bottom: 1px solid #eee; }
+        /* UPDATED: Styles for closed items */
+        .closed-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .closed-item:hover { background-color: #f8f9fa; }
+        .closed-item:last-child { border-bottom: none; }
         .closed-item div { display: flex; justify-content: space-between; align-items: center; }
 
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 20px auto; }
@@ -190,12 +190,9 @@
                 card.onclick = () => viewCustomerDetails(cust.id);
                 
                 const statusClass = getDueDateStatusClass(cust.due_date);
-                if (statusClass) {
-                    card.classList.add(statusClass);
-                }
+                if (statusClass) { card.classList.add(statusClass); }
                 
                 const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
-
                 card.innerHTML = `
                     <div class="card-header">
                         <span class="customer-name">${cust.borrower_name}</span>
@@ -215,7 +212,7 @@
                 card.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openFormModal(cust); });
                 card.querySelector('.close-loan-btn').addEventListener('click', (e) => { e.stopPropagation(); closeLoan(cust.id, cust.borrower_name); });
                 card.querySelector('.pay-interest-btn').addEventListener('click', (e) => { e.stopPropagation(); payInterest(cust.id, cust.borrower_name); });
-                
+
                 customerList.appendChild(card);
             });
         }
@@ -281,7 +278,6 @@
             const startDate = new Date(customer.due_date);
             startDate.setDate(startDate.getDate() - customer.loan_days);
 
-            // UPDATED: Added interest amount to the details popup
             document.getElementById('detail-body').innerHTML = `
                 <p><strong>ชื่อลูกค้า:</strong> <b>${customer.borrower_name}</b></p>
                 <p><strong>สถานะ:</strong> <b>${customer.status || 'N/A'}</b></p>
@@ -348,15 +344,18 @@
             return null;
         }
         
+        // UPDATED: Function to show and handle closed loans
         async function showClosedLoans() {
             spinner.style.display = 'block';
             closedLoansList.innerHTML = '<div class="loader"></div>';
             const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Closed').order('created_at', { ascending: false });
             spinner.style.display = 'none';
+
             if (error) {
                 closedLoansList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
                 return;
             }
+
             if (data.length === 0) {
                 closedLoansList.innerHTML = '<p>ยังไม่มีรายการที่ปิดยอด</p>';
             } else {
@@ -364,10 +363,19 @@
                 data.forEach(cust => {
                     const item = document.createElement('div');
                     item.className = 'closed-item';
+                    
+                    // Add click event to view details
+                    item.onclick = () => {
+                        closedLoansDialog.close(); // Close this popup first
+                        viewCustomerDetails(cust.id); // Then open the main details popup
+                    };
+
+                    const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
+
                     item.innerHTML = `
                         <div>
                             <span>${cust.borrower_name}</span>
-                            <span style="font-weight:bold;">${cust.loan_amount.toLocaleString()} บาท</span>
+                            <span style="font-weight:bold;">ต้น ${cust.loan_amount.toLocaleString()} + ดอก ${interestPayable.toLocaleString()}</span>
                         </div>
                         <div style="font-size:0.8em; color: #666;">
                             <span>ปิดเมื่อ: ${new Date(cust.created_at).toLocaleDateString('th-TH')}</span>
