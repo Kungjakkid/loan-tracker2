@@ -43,7 +43,7 @@
 
         .card-header, .card-footer { display: flex; justify-content: space-between; align-items: center; }
         .customer-name { font-size: 1.25em; font-weight: bold; }
-        .card-status { font-size: 0.9em; font-weight: bold; }
+        .card-status { font-size: 0.9em; color: var(--gray-color); } /* UPDATED */
         .card-body { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; padding: 15px 0; border-top: 1px solid #f0f2f5; border-bottom: 1px solid #f0f2f5; }
         .card-body .label { color: #666; }
         .card-body .value { font-weight: bold; text-align: right; }
@@ -101,7 +101,7 @@
                 <label for="startDate">วันที่เริ่มกู้ (เว้นว่าง = วันนี้):</label> <input type="date" id="startDate" name="startDate">
                 <label for="loanAmount">ยอดกู้ (บาท):</label> <input type="number" id="loanAmount" name="loanAmount" required>
                 <label for="interestRate">ดอกเบี้ย (%):</label> <input type="number" id="interestRate" name="interestRate" required>
-                <label for="loanDays">จำนวนวัน:</label> <input type="number" id="loanDays" name="loanDays" required>
+                <label for="loanDays">จำนวนวัน/งวด:</label> <input type="number" id="loanDays" name="loanDays" required>
                 <label for="imageFile1">รูปภาพผู้กู้:</label> <input type="file" id="imageFile1" name="imageFile1" accept="image/*">
                 <div class="modal-actions"><button type="submit" id="save-btn">บันทึกข้อมูล</button></div>
             </form>
@@ -182,7 +182,7 @@
                 card.innerHTML = `
                     <div class="card-header">
                         <span class="customer-name">${cust.borrower_name}</span>
-                        <span class="card-status">${cust.status}</span>
+                        <span class="card-status">จ่ายแล้ว ${cust.interest_payment_count || 0} ครั้ง</span>
                     </div>
                     <div class="card-body">
                         <span class="label">เงินต้นปัจจุบัน:</span><span class="value">${cust.loan_amount.toLocaleString()} บาท</span>
@@ -227,7 +227,11 @@
             };
             const file1 = formData.get('imageFile1');
             if (file1 && file1.size > 0) { loanData.image_url_1 = await uploadImage(file1); }
-            if (!customerId) { loanData.status = 'Active'; }
+            if (!customerId) {
+                loanData.status = 'Active';
+                loanData.interest_payment_count = 0;
+                loanData.total_interest_paid = 0;
+            }
             let result;
             if (customerId) {
                 result = await supabaseClient.from('loans').update(loanData).eq('id', customerId);
@@ -262,8 +266,12 @@
                 <p><strong>ชื่อลูกค้า:</strong> <b>${customer.borrower_name}</b></p>
                 <p><strong>สถานะ:</strong> <b>${customer.status || 'N/A'}</b></p>
                 <p><strong>เงินต้น:</strong> <b>${customer.loan_amount.toLocaleString()} บาท</b></p>
-                <p><strong>ดอกเบี้ย:</strong> <b>${interest.toLocaleString()} บาท</b></p>
+                <p><strong>ดอกเบี้ยต่องวด:</strong> <b>${interest.toLocaleString()} บาท</b></p>
                 <p><strong>ยอดรวมที่ต้องชำระ:</strong> <b>${total.toLocaleString()} บาท</b></p>
+                <hr>
+                <p><strong>จ่ายดอกเบี้ยแล้ว:</strong> <b>${customer.interest_payment_count || 0} ครั้ง</b></p>
+                <p><strong>รวมเป็นเงิน:</strong> <b>${(customer.total_interest_paid || 0).toLocaleString()} บาท</b></p>
+                <hr>
                 <p><strong>วันที่กู้:</strong> <b>${startDate.toLocaleDateString('th-TH')}</b></p>
                 <p><strong>วันครบกำหนด:</strong> <b>${new Date(customer.due_date).toLocaleDateString('th-TH')}</b></p>
             `;
@@ -283,16 +291,14 @@
             customerDialog.showModal();
         }
 
-        // --- UPDATED: payInterest function to extend the due date ---
+        // --- UPDATED: payInterest function to count payments and total ---
         async function payInterest(customerId, customerName) {
             if (!confirm(`ยืนยันการจ่ายดอกและต่อสัญญาสำหรับ ${customerName}?\n(วันครบกำหนดจะถูกเลื่อนออกไป)`)) return;
-            
             spinner.style.display = 'block';
 
-            // 1. Fetch the current loan data to get due_date and loan_days
             const { data: customer, error: fetchError } = await supabaseClient
                 .from('loans')
-                .select('due_date, loan_days')
+                .select('*')
                 .eq('id', customerId)
                 .single();
 
@@ -302,18 +308,22 @@
                 return;
             }
 
-            // 2. Calculate the new due date
+            const currentInterestPayment = customer.loan_amount * (customer.interest_rate / 100);
+            const newCount = (customer.interest_payment_count || 0) + 1;
+            const newTotalInterest = (customer.total_interest_paid || 0) + currentInterestPayment;
+            
             const currentDueDate = new Date(customer.due_date);
             const loanDays = customer.loan_days;
             const newDueDate = new Date(currentDueDate.setDate(currentDueDate.getDate() + loanDays));
             const formattedNewDueDate = newDueDate.toISOString().split('T')[0];
 
-            // 3. Update the database with the new due date and reset status
             const { error: updateError } = await supabaseClient
                 .from('loans')
                 .update({ 
                     due_date: formattedNewDueDate,
-                    status: 'Active' // Reset status to Active for the new period
+                    status: 'Active',
+                    interest_payment_count: newCount,
+                    total_interest_paid: newTotalInterest
                 })
                 .eq('id', customerId);
             
