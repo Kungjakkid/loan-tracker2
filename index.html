@@ -13,60 +13,34 @@
             --primary-color: #007bff;
             --danger-color: #dc3545;
             --success-color: #28a745;
+            --warning-color: #ffc107;
             --gray-color: #6c757d;
-            --light-gray-color: #f8f9fa;
-            --border-color: #dee2e6;
         }
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
         .container { max-width: 800px; margin: auto; }
 
         .dashboard {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 20px;
+            background-color: white; padding: 20px; border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px;
         }
         .dashboard .label { color: var(--gray-color); font-size: 1em; }
-        .dashboard .total-amount {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: var(--danger-color);
-            margin-top: 5px;
-        }
+        .dashboard .total-amount { font-size: 2.5em; font-weight: 700; color: var(--danger-color); margin-top: 5px; }
 
-        .main-actions {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .main-actions .action-btn {
-            flex: 1;
-            padding: 12px;
-            font-size: 1em;
-            border: 1px solid var(--border-color);
-            background-color: white;
-            color: var(--primary-color);
-            border-radius: 5px;
-        }
-        .main-actions .action-btn.primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
+        .main-actions { display: flex; gap: 15px; margin-bottom: 20px; }
+        .main-actions .action-btn { flex: 1; padding: 12px; font-size: 1em; border-radius: 5px; border: 1px solid #dee2e6; background-color: white; color: var(--primary-color); }
+        .main-actions .action-btn.primary { background-color: var(--primary-color); color: white; }
 
         #customer-list { display: flex; flex-direction: column; gap: 15px; }
         .customer-card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            cursor: pointer;
+            background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px; display: flex; flex-direction: column; gap: 15px; cursor: pointer;
+            border-left: 5px solid transparent; /* Default border */
+            transition: background-color 0.2s;
         }
-        
+        .customer-card:hover { background-color: #f8f9fa; }
+        .customer-card.status-overdue { border-left-color: var(--danger-color); } /* Red border */
+        .customer-card.status-due-soon { border-left-color: var(--warning-color); } /* Yellow border */
+
         .card-header, .card-footer { display: flex; justify-content: space-between; align-items: center; }
         .customer-name { font-size: 1.25em; font-weight: bold; }
         .card-status { font-size: 0.9em; font-weight: bold; color: var(--success-color); }
@@ -74,15 +48,7 @@
         .card-body .label { color: #666; }
         .card-body .value { font-weight: bold; text-align: right; }
         .card-footer { flex-wrap: wrap; gap: 10px; justify-content: flex-end;}
-        .card-footer .action-button {
-            background-color: #e9ecef;
-            border: none;
-            color: #333;
-            padding: 6px 12px;
-            font-size: 14px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
+        .card-footer .action-button { background-color: #e9ecef; border: none; color: #333; padding: 6px 12px; font-size: 14px; border-radius: 20px; cursor: pointer; }
         .card-footer .action-button:hover { background-color: #ced4da; }
         .card-footer .action-button.close-loan-btn { background-color: var(--success-color); color: white; }
 
@@ -93,7 +59,6 @@
         .modal-details p { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #f0f2f5; padding-bottom: 8px; }
         .modal-details p:last-child { border-bottom: none; }
         .modal-details strong { font-weight: normal; color: #555; }
-
         .close-btn { position: absolute; top: 15px; right: 15px; background: #e9ecef; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center;}
         form label { display: block; margin-top: 10px; font-weight: bold; }
         form input { width: calc(100% - 20px); padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; }
@@ -155,9 +120,7 @@
     
     <script>
         const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
-        // --- THIS KEY IS NOW CORRECT ---
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
-        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const customerList = document.getElementById('customer-list');
@@ -209,6 +172,12 @@
                 card.className = 'customer-card';
                 card.onclick = () => viewCustomerDetails(cust.id);
                 
+                // Get and apply the status class for the border color
+                const statusClass = getDueDateStatusClass(cust.due_date);
+                if (statusClass) {
+                    card.classList.add(statusClass);
+                }
+                
                 const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
 
                 card.innerHTML = `
@@ -232,7 +201,6 @@
                 card.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openFormModal(cust); });
                 card.querySelector('.close-loan-btn').addEventListener('click', (e) => { e.stopPropagation(); closeLoan(cust.id, cust.borrower_name); });
                 card.querySelector('.pay-interest-btn').addEventListener('click', (e) => { e.stopPropagation(); payInterest(cust.id, cust.borrower_name); });
-                
                 card.querySelector('.reduce-principal-btn').addEventListener('click', (e) => { e.stopPropagation(); alert('ฟังก์ชัน ชำระ/ลดต้น ยังไม่เปิดใช้งาน'); });
                 card.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); alert('ฟังก์ชัน ลบ ยังไม่เปิดใช้งาน'); });
 
@@ -298,12 +266,15 @@
             const interest = customer.loan_amount * (customer.interest_rate / 100);
             const total = customer.loan_amount + interest;
             
+            const startDate = new Date(customer.due_date);
+            startDate.setDate(startDate.getDate() - customer.loan_days);
+
             document.getElementById('detail-body').innerHTML = `
                 <p><strong>ชื่อลูกค้า:</strong> <b>${customer.borrower_name}</b></p>
                 <p><strong>สถานะ:</strong> <b>${customer.status || 'N/A'}</b></p>
                 <p><strong>เงินต้น:</strong> <b>${customer.loan_amount.toLocaleString()} บาท</b></p>
                 <p><strong>ยอดรวมที่ต้องชำระ:</strong> <b>${total.toLocaleString()} บาท</b></p>
-                <p><strong>วันที่กู้:</strong> <b>${new Date(new Date(customer.due_date).setDate(new Date(customer.due_date).getDate() - customer.loan_days)).toLocaleDateString('th-TH')}</b></p>
+                <p><strong>วันที่กู้:</strong> <b>${startDate.toLocaleDateString('th-TH')}</b></p>
                 <p><strong>วันครบกำหนด:</strong> <b>${new Date(customer.due_date).toLocaleDateString('th-TH')}</b></p>
             `;
             
@@ -342,6 +313,28 @@
             if (error) { console.error('Image Upload Error:', error); return null; }
             const { data: { publicUrl } } = await supabaseClient.storage.from('images').getPublicUrl(fileName);
             return publicUrl;
+        }
+
+        // --- UPDATED: Date checking logic ---
+        function getDueDateStatusClass(dueDateString) {
+            if (!dueDateString) return null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // ตั้งเวลาของ "วันนี้" เป็นเที่ยงคืนเพื่อการเปรียบเทียบที่แม่นยำ
+
+            const dueDate = new Date(dueDateString);
+            dueDate.setHours(0, 0, 0, 0); // ตั้งเวลาของ "วันครบกำหนด" เป็นเที่ยงคืนเช่นกัน
+
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                return 'status-overdue'; // เกินกำหนดมาแล้ว (สีแดง)
+            } else if (diffDays === 0) {
+                return 'status-overdue'; // ครบกำหนด "วันนี้" (สีแดง)
+            } else if (diffDays === 1) {
+                return 'status-due-soon'; // ครบกำหนด "พรุ่งนี้" (สีเหลือง)
+            }
+            return null; // ยังไม่ถึงกำหนด
         }
     </script>
 </body>
