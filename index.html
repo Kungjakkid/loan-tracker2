@@ -20,7 +20,6 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 10px; }
         .container { max-width: 800px; margin: auto; }
 
-        /* --- NEW: Dashboard Styles --- */
         .dashboard {
             background-color: white;
             padding: 20px;
@@ -37,7 +36,6 @@
             margin-top: 5px;
         }
 
-        /* --- NEW: Main Actions Bar --- */
         .main-actions {
             display: flex;
             gap: 15px;
@@ -50,6 +48,7 @@
             border: 1px solid var(--border-color);
             background-color: white;
             color: var(--primary-color);
+            border-radius: 5px;
         }
         .main-actions .action-btn.primary {
             background-color: var(--primary-color);
@@ -65,6 +64,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            cursor: pointer;
         }
         
         .card-header, .card-footer { display: flex; justify-content: space-between; align-items: center; }
@@ -81,6 +81,7 @@
             padding: 6px 12px;
             font-size: 14px;
             border-radius: 20px;
+            cursor: pointer;
         }
         .card-footer .action-button:hover { background-color: #ced4da; }
         .card-footer .action-button.close-loan-btn { background-color: var(--success-color); color: white; }
@@ -89,12 +90,13 @@
         .modal-content { padding: 20px; position: relative; }
         .modal-content h2 { text-align: center; margin-top: 0; }
         .modal-image { width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px; }
-        .modal-details p { display: flex; justify-content: space-between; margin: 8px 0; }
+        .modal-details p { display: flex; justify-content: space-between; margin: 8px 0; border-bottom: 1px solid #f0f2f5; padding-bottom: 8px; }
+        .modal-details p:last-child { border-bottom: none; }
         .modal-details strong { font-weight: normal; color: #555; }
 
         .close-btn { position: absolute; top: 15px; right: 15px; background: #e9ecef; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center;}
         form label { display: block; margin-top: 10px; font-weight: bold; }
-        form input { width: calc(100% - 20px); padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; }
+        form input { width: calc(100% - 20px); padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; }
         .modal-actions { margin-top: 20px; }
         .modal-actions button { width: 100%; padding: 12px; }
 
@@ -147,32 +149,29 @@
         </div>
     </dialog>
 
+    <div id="spinner" class="spinner" style="display:none;"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <script>
         const SUPABASE_URL = 'https://igfdlteumfiizbsrijxs.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI१NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnZmRsdGV1bWZpaXpic3JpanhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwMDkwOTgsImV4cCI6MjA3MzU4NTA5OH0.4_g2UOf5gDRtRlINweKS8fdwhg_dho14W3eMu6x-LqU';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- DOM Elements ---
         const customerList = document.getElementById('customer-list');
         const addNewBtn = document.getElementById('add-new-btn');
         const spinner = document.getElementById('spinner');
 
-        // Add/Edit Dialog
         const customerDialog = document.getElementById('customer-dialog');
         const modalTitle = document.getElementById('modal-title');
         const form = document.getElementById('customer-form');
         const closeCustomerDialogBtn = document.querySelector('#customer-dialog .close-btn');
 
-        // Details Dialog
         const detailsDialog = document.getElementById('details-dialog');
         const closeDetailsDialogBtn = document.querySelector('#details-dialog .close-btn');
         
-        // Dashboard
         const totalDueEl = document.getElementById('total-due');
 
-        // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', loadCustomers);
         addNewBtn.addEventListener('click', () => openFormModal());
         closeCustomerDialogBtn.addEventListener('click', () => customerDialog.close());
@@ -183,7 +182,6 @@
             alert('ฟังก์ชันดึงข้อมูล CSV ยังไม่เปิดใช้งาน');
         });
 
-        // --- Main Functions ---
         async function loadCustomers() {
             spinner.style.display = 'block';
             const { data: customers, error } = await supabaseClient.from('loans').select('*').not('status', 'eq', 'Closed').order('due_date', { ascending: true });
@@ -207,7 +205,7 @@
             customers.forEach(cust => {
                 const card = document.createElement('div');
                 card.className = 'customer-card';
-                card.onclick = () => viewCustomerDetails(cust.id); // Click card to see full details
+                card.onclick = () => viewCustomerDetails(cust.id);
                 
                 const interestPayable = cust.loan_amount * (cust.interest_rate / 100);
 
@@ -229,12 +227,10 @@
                         <button class="action-button delete-btn">ลบ</button>
                     </div>`;
                 
-                // Attach event listeners to buttons on the card
                 card.querySelector('.edit-btn').addEventListener('click', (e) => { e.stopPropagation(); openFormModal(cust); });
                 card.querySelector('.close-loan-btn').addEventListener('click', (e) => { e.stopPropagation(); closeLoan(cust.id, cust.borrower_name); });
                 card.querySelector('.pay-interest-btn').addEventListener('click', (e) => { e.stopPropagation(); payInterest(cust.id, cust.borrower_name); });
                 
-                // Placeholder listeners
                 card.querySelector('.reduce-principal-btn').addEventListener('click', (e) => { e.stopPropagation(); alert('ฟังก์ชัน ชำระ/ลดต้น ยังไม่เปิดใช้งาน'); });
                 card.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); alert('ฟังก์ชัน ลบ ยังไม่เปิดใช้งาน'); });
 
@@ -302,7 +298,7 @@
             
             document.getElementById('detail-body').innerHTML = `
                 <p><strong>ชื่อลูกค้า:</strong> <b>${customer.borrower_name}</b></p>
-                <p><strong>สถานะ:</strong> <b>${customer.status}</b></p>
+                <p><strong>สถานะ:</strong> <b>${customer.status || 'N/A'}</b></p>
                 <p><strong>เงินต้น:</strong> <b>${customer.loan_amount.toLocaleString()} บาท</b></p>
                 <p><strong>ยอดรวมที่ต้องชำระ:</strong> <b>${total.toLocaleString()} บาท</b></p>
                 <p><strong>วันที่กู้:</strong> <b>${new Date(new Date(customer.due_date).setDate(new Date(customer.due_date).getDate() - customer.loan_days)).toLocaleDateString('th-TH')}</b></p>
@@ -342,7 +338,7 @@
             const fileName = `${Date.now()}_${file.name}`;
             const { data, error } = await supabaseClient.storage.from('images').upload(fileName, file);
             if (error) { console.error('Image Upload Error:', error); return null; }
-            const { data: { publicUrl } } = supabaseClient.storage.from('images').getPublicUrl(fileName);
+            const { data: { publicUrl } } = await supabaseClient.storage.from('images').getPublicUrl(fileName);
             return publicUrl;
         }
     </script>
