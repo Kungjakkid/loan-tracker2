@@ -65,6 +65,9 @@
         .modal-actions { margin-top: 20px; }
         .modal-actions button { width: 100%; padding: 12px; }
 
+        .closed-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .closed-item div { display: flex; justify-content: space-between; align-items: center; }
+
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinner { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.7); z-index: 2000; }
@@ -80,7 +83,7 @@
 
         <div class="main-actions">
             <button id="add-new-btn" class="action-btn primary">+ เพิ่มลูกค้าใหม่</button>
-            <button id="export-csv-btn" class="action-btn">ดึงข้อมูล (CSV)</button>
+            <button id="show-closed-btn" class="action-btn">ดูรายการที่ปิดแล้ว</button>
         </div>
 
         <div id="customer-list-container">
@@ -114,6 +117,14 @@
         </div>
     </dialog>
 
+    <dialog id="closed-loans-dialog">
+        <div class="modal-content">
+            <button class="close-btn">&times;</button>
+            <h2>รายการที่ปิดยอดแล้ว</h2>
+            <div id="closed-loans-list"></div>
+        </div>
+    </dialog>
+
     <div id="spinner" class="spinner" style="display:none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -137,15 +148,21 @@
         
         const totalDueEl = document.getElementById('total-due');
 
+        // NEW: Closed Loans Dialog elements
+        const showClosedBtn = document.getElementById('show-closed-btn');
+        const closedLoansDialog = document.getElementById('closed-loans-dialog');
+        const closedLoansList = document.getElementById('closed-loans-list');
+        const closeClosedDialogBtn = document.querySelector('#closed-loans-dialog .close-btn');
+
         document.addEventListener('DOMContentLoaded', loadCustomers);
         addNewBtn.addEventListener('click', () => openFormModal());
         closeCustomerDialogBtn.addEventListener('click', () => customerDialog.close());
         closeDetailsDialogBtn.addEventListener('click', () => detailsDialog.close());
         form.addEventListener('submit', handleFormSubmit);
 
-        document.getElementById('export-csv-btn').addEventListener('click', () => {
-            alert('ฟังก์ชันดึงข้อมูล CSV ยังไม่เปิดใช้งาน');
-        });
+        // NEW: Listener for closed loans button
+        showClosedBtn.addEventListener('click', showClosedLoans);
+        closeClosedDialogBtn.addEventListener('click', () => closedLoansDialog.close());
 
         async function loadCustomers() {
             spinner.style.display = 'block';
@@ -172,7 +189,6 @@
                 card.className = 'customer-card';
                 card.onclick = () => viewCustomerDetails(cust.id);
                 
-                // Get and apply the status class for the border color
                 const statusClass = getDueDateStatusClass(cust.due_date);
                 if (statusClass) {
                     card.classList.add(statusClass);
@@ -319,22 +335,56 @@
         function getDueDateStatusClass(dueDateString) {
             if (!dueDateString) return null;
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // ตั้งเวลาของ "วันนี้" เป็นเที่ยงคืนเพื่อการเปรียบเทียบที่แม่นยำ
+            today.setHours(0, 0, 0, 0);
 
             const dueDate = new Date(dueDateString);
-            dueDate.setHours(0, 0, 0, 0); // ตั้งเวลาของ "วันครบกำหนด" เป็นเที่ยงคืนเช่นกัน
+            dueDate.setHours(0, 0, 0, 0);
 
             const diffTime = dueDate.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays < 0) {
-                return 'status-overdue'; // เกินกำหนดมาแล้ว (สีแดง)
+                return 'status-overdue'; // Overdue (Red)
             } else if (diffDays === 0) {
-                return 'status-overdue'; // ครบกำหนด "วันนี้" (สีแดง)
+                return 'status-overdue'; // Due Today (Red)
             } else if (diffDays === 1) {
-                return 'status-due-soon'; // ครบกำหนด "พรุ่งนี้" (สีเหลือง)
+                return 'status-due-soon'; // Due Tomorrow (Yellow)
             }
-            return null; // ยังไม่ถึงกำหนด
+            return null; // Not due yet
+        }
+        
+        // --- NEW: Function to show closed loans ---
+        async function showClosedLoans() {
+            spinner.style.display = 'block';
+            closedLoansList.innerHTML = '<div class="loader"></div>';
+            const { data, error } = await supabaseClient.from('loans').select('*').eq('status', 'Closed').order('created_at', { ascending: false });
+            spinner.style.display = 'none';
+
+            if (error) {
+                closedLoansList.innerHTML = `<p style="color:red;">เกิดข้อผิดพลาด: ${error.message}</p>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                closedLoansList.innerHTML = '<p>ยังไม่มีรายการที่ปิดยอด</p>';
+            } else {
+                closedLoansList.innerHTML = '';
+                data.forEach(cust => {
+                    const item = document.createElement('div');
+                    item.className = 'closed-item';
+                    item.innerHTML = `
+                        <div>
+                            <span>${cust.borrower_name}</span>
+                            <span style="font-weight:bold;">${cust.loan_amount.toLocaleString()} บาท</span>
+                        </div>
+                        <div style="font-size:0.8em; color: #666;">
+                            <span>ปิดเมื่อ: ${new Date(cust.created_at).toLocaleDateString('th-TH')}</span>
+                        </div>
+                    `;
+                    closedLoansList.appendChild(item);
+                });
+            }
+            closedLoansDialog.showModal();
         }
     </script>
 </body>
